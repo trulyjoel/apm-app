@@ -4,6 +4,7 @@ import { Input, Card, Typography, Divider, Tag, Space, message, Button } from "a
 import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Fuse from 'fuse.js';
 import data from "./data.json";
 
 // Define the type for application data
@@ -33,6 +34,7 @@ export default function Home() {
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<Application[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [fuse, setFuse] = useState<Fuse<Application> | null>(null);
   
   // Initialize loading state and ensure data is loaded client-side
   useEffect(() => {
@@ -40,6 +42,22 @@ export default function Home() {
       // This ensures data is loaded client-side
       if (data && Array.isArray(data)) {
         console.log("Data loaded successfully:", data.length, "applications");
+        
+        // Initialize Fuse.js with our data
+        const fuseOptions = {
+          keys: [
+            'name',
+            'apm_application_code',
+            'description',
+            'application_contact',
+            'it_manager',
+            'it_vp'
+          ],
+          threshold: 0.3, // Lower threshold means more strict matching
+          includeScore: true
+        };
+        
+        setFuse(new Fuse(data, fuseOptions));
       } else {
         console.error("Data is not in expected format:", data);
       }
@@ -53,19 +71,16 @@ export default function Home() {
   
   const onSearch = (value: string) => {
     try {
-      if (!value.trim()) {
-        setSearchResults(data);
+      if (!value.trim() || !fuse) {
+        setSearchResults([]);
         return;
       }
       
-      const filteredResults = data.filter(item => {
-        const searchTerm = value.toLowerCase();
-        return (
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.description.toLowerCase().includes(searchTerm) ||
-          item.apm_application_code.toLowerCase().includes(searchTerm)
-        );
-      });
+      // Use Fuse.js to search
+      const results = fuse.search(value);
+      
+      // Extract the items from the Fuse.js results
+      const filteredResults = results.map(result => result.item);
       
       setSearchResults(filteredResults);
       console.log("Search results:", filteredResults.length, "applications found");
@@ -89,19 +104,16 @@ export default function Home() {
                 const value = e.target.value;
                 setSearchValue(value);
                 
-                if (!value.trim()) {
-                  setSearchResults(data);
+                if (!value.trim() || !fuse) {
+                  setSearchResults([]);
                   return;
                 }
                 
-                const filteredResults = data.filter(item => {
-                  const searchTerm = value.toLowerCase();
-                  return (
-                    item.name.toLowerCase().includes(searchTerm) ||
-                    item.description.toLowerCase().includes(searchTerm) ||
-                    item.apm_application_code.toLowerCase().includes(searchTerm)
-                  );
-                });
+                // Use Fuse.js to search
+                const results = fuse.search(value);
+                
+                // Extract the items from the Fuse.js results
+                const filteredResults = results.map(result => result.item);
                 
                 setSearchResults(filteredResults);
               } catch (error) {
