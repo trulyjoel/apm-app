@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { Input, Card, Typography, Divider, Tag, Space } from "antd";
+import { Input, Card, Typography, Divider, Tag, Space, message } from "antd";
 import { MailOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import data from "./data.json";
@@ -33,28 +33,45 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<Application[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // Initialize loading state only, not results
+  // Initialize loading state and ensure data is loaded client-side
   useEffect(() => {
-    setIsLoaded(true);
+    try {
+      // This ensures data is loaded client-side
+      if (data && Array.isArray(data)) {
+        console.log("Data loaded successfully:", data.length, "applications");
+      } else {
+        console.error("Data is not in expected format:", data);
+      }
+      setIsLoaded(true);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      message.error("Failed to load application data. Please refresh the page.");
+      setIsLoaded(true);
+    }
   }, []);
   
   const onSearch = (value: string) => {
-    if (!value.trim()) {
-      setSearchResults(data);
-      return;
+    try {
+      if (!value.trim()) {
+        setSearchResults(data);
+        return;
+      }
+      
+      const filteredResults = data.filter(item => {
+        const searchTerm = value.toLowerCase();
+        return (
+          item.name.toLowerCase().includes(searchTerm) ||
+          item.description.toLowerCase().includes(searchTerm) ||
+          item.apm_application_code.toLowerCase().includes(searchTerm)
+        );
+      });
+      
+      setSearchResults(filteredResults);
+      console.log("Search results:", filteredResults.length, "applications found");
+    } catch (error) {
+      console.error("Error during search:", error);
+      message.error("An error occurred during search. Please try again.");
     }
-    
-    const filteredResults = data.filter(item => {
-      const searchTerm = value.toLowerCase();
-      return (
-        item.name.toLowerCase().includes(searchTerm) ||
-        item.description.toLowerCase().includes(searchTerm) ||
-        item.apm_application_code.toLowerCase().includes(searchTerm)
-      );
-    });
-    
-    setSearchResults(filteredResults);
-    console.log("Search results:", filteredResults);
   };
   return (
     <div className="flex flex-col min-h-screen p-8 pb-20 font-[family-name:var(--font-geist-sans)]">
@@ -67,24 +84,29 @@ export default function Home() {
             size="large"
             value={searchValue}
             onChange={(e) => {
-              const value = e.target.value;
-              setSearchValue(value);
-              
-              if (!value.trim()) {
-                setSearchResults(data);
-                return;
+              try {
+                const value = e.target.value;
+                setSearchValue(value);
+                
+                if (!value.trim()) {
+                  setSearchResults(data);
+                  return;
+                }
+                
+                const filteredResults = data.filter(item => {
+                  const searchTerm = value.toLowerCase();
+                  return (
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    item.description.toLowerCase().includes(searchTerm) ||
+                    item.apm_application_code.toLowerCase().includes(searchTerm)
+                  );
+                });
+                
+                setSearchResults(filteredResults);
+              } catch (error) {
+                console.error("Error during search input:", error);
+                message.error("An error occurred while searching. Please try again.");
               }
-              
-              const filteredResults = data.filter(item => {
-                const searchTerm = value.toLowerCase();
-                return (
-                  item.name.toLowerCase().includes(searchTerm) ||
-                  item.description.toLowerCase().includes(searchTerm) ||
-                  item.apm_application_code.toLowerCase().includes(searchTerm)
-                );
-              });
-              
-              setSearchResults(filteredResults);
             }}
             onSearch={onSearch}
           />
