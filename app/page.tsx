@@ -70,9 +70,23 @@ export default function Home() {
                   <h3 className="text-lg font-semibold">{app.name}</h3>
                   <p className="text-sm text-gray-600 mb-2">Code: {app.apm_application_code}</p>
                   <p className="text-sm mb-2">{app.description}</p>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 space-y-1">
                     <p>Lifecycle: {app.lifecycle}</p>
-                    <p>Contact: {app.application_contact}</p>
+                    <p>Critical Information Asset: {app.critical_information_asset}</p>
+                    <p>AppSec Release Assessment: {app.appsec_release_assessment_required}</p>
+                    <p>User Interface: {app.user_interface}</p>
+                    
+                    <div className="pt-2 border-t mt-2">
+                      <h4 className="font-medium mb-1">Contacts:</h4>
+                      <p>Application Contact: {app.application_contact} ({app.application_contact_title})</p>
+                      <p className="text-xs">{app.application_contact_email}</p>
+                      
+                      <p className="mt-1">IT Manager: {app.it_manager} ({app.it_manager_title})</p>
+                      <p className="text-xs">{app.it_manager_email}</p>
+                      
+                      <p className="mt-1">IT VP: {app.it_vp} ({app.it_vp_title})</p>
+                      <p className="text-xs">{app.it_vp_email}</p>
+                    </div>
                   </div>
                 </div>
               ))}
