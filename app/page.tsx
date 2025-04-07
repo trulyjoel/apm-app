@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
-import { Input, Card, Typography, Divider, Tag, Space, message } from "antd";
-import { MailOutlined } from "@ant-design/icons";
+import { Input, Card, Typography, Divider, Tag, Space, message, Button } from "antd";
+import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import data from "./data.json";
 
 // Define the type for application data
@@ -75,7 +76,7 @@ export default function Home() {
   };
   return (
     <div className="flex flex-col min-h-screen p-8 pb-20 font-[family-name:var(--font-geist-sans)]">
-      <header className="w-full flex justify-center py-4 sticky top-0 bg-white z-10 border-b">
+      <header className="w-full flex justify-between items-center py-4 sticky top-0 bg-white z-10 border-b px-4">
         <div className="w-full max-w-2xl">
           <Search
             placeholder="Search by name, APM code, or description"
@@ -111,6 +112,11 @@ export default function Home() {
             onSearch={onSearch}
           />
         </div>
+        <Link href="/table">
+          <Button type="primary" icon={<TableOutlined />}>
+            Table View
+          </Button>
+        </Link>
       </header>
       
       <main className="flex flex-col items-center flex-grow pt-20">
