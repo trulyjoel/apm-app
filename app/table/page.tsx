@@ -12,21 +12,22 @@ import data from "../data.json";
 // Define the type for application data
 interface Application {
   apm_application_code: string;
-  name: string;
-  description: string;
-  lifecycle: string;
+  application_name: string;
+  application_description: string;
+  application_lifecycle: string;
   critical_information_asset: string;
-  appsec_release_assessment_required: string;
+  application_security_release_assessment_required: string;
   application_contact: string;
   application_contact_email: string;
   application_contact_title: string;
   it_manager: string;
-  it_manager_email: string;
+  itmanageremail: string;
   it_manager_title: string;
   it_vp: string;
-  it_vp_email: string;
+  itvpemail: string;
   it_vp_title: string;
   user_interface: string;
+  isusapp: string;
 }
 
 type DataIndex = keyof Application;
@@ -52,9 +53,9 @@ export default function TablePage() {
         // Initialize Fuse.js with our data
         const fuseOptions = {
           keys: [
-            'name',
+            'application_name',
             'apm_application_code',
-            'description',
+            'application_description',
             'application_contact',
             'it_manager',
             'it_vp',
@@ -187,30 +188,30 @@ export default function TablePage() {
     },
     {
       title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'application_name',
+      key: 'application_name',
       width: 150,
-      ...getColumnSearchProps('name'),
-      sorter: (a, b) => a.name.localeCompare(b.name),
+      ...getColumnSearchProps('application_name'),
+      sorter: (a, b) => a.application_name.localeCompare(b.application_name),
     },
     {
       title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      ...getColumnSearchProps('description'),
+      dataIndex: 'application_description',
+      key: 'application_description',
+      ...getColumnSearchProps('application_description'),
       ellipsis: true,
     },
     {
       title: 'Lifecycle',
-      dataIndex: 'lifecycle',
-      key: 'lifecycle',
+      dataIndex: 'application_lifecycle',
+      key: 'application_lifecycle',
       width: 120,
       filters: [
         { text: 'Production', value: 'Production' },
         { text: 'Development', value: 'Development' },
         { text: 'Testing', value: 'Testing' },
       ],
-      onFilter: (value, record) => record.lifecycle === value,
+      onFilter: (value, record) => record.application_lifecycle === value,
       render: (text) => (
         <Tag color={text === 'Production' ? 'green' : 'blue'}>{text}</Tag>
       ),
@@ -231,14 +232,14 @@ export default function TablePage() {
     },
     {
       title: 'AppSec',
-      dataIndex: 'appsec_release_assessment_required',
-      key: 'appsec_release_assessment_required',
+      dataIndex: 'application_security_release_assessment_required',
+      key: 'application_security_release_assessment_required',
       width: 100,
       filters: [
         { text: 'Yes', value: 'Yes' },
         { text: 'No', value: 'No' },
       ],
-      onFilter: (value, record) => record.appsec_release_assessment_required === value,
+      onFilter: (value, record) => record.application_security_release_assessment_required === value,
       render: (text) => (
         <Tag color={text === 'Yes' ? 'orange' : 'default'}>{text}</Tag>
       ),
@@ -268,8 +269,8 @@ export default function TablePage() {
       key: 'user_interface',
       width: 120,
       filters: [
-        { text: 'Public Facing', value: 'Public Facing' },
-        { text: 'Internal', value: 'Internal' },
+        { text: 'Externally Facing', value: 'Externally Facing' },
+        { text: 'Internally Facing', value: 'Internally Facing' },
       ],
       onFilter: (value, record) => record.user_interface === value,
     },

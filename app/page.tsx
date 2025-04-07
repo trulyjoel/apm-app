@@ -10,21 +10,22 @@ import data from "./data.json";
 // Define the type for application data
 interface Application {
   apm_application_code: string;
-  name: string;
-  description: string;
-  lifecycle: string;
+  application_name: string;
+  application_description: string;
+  application_lifecycle: string;
   critical_information_asset: string;
-  appsec_release_assessment_required: string;
+  application_security_release_assessment_required: string;
   application_contact: string;
   application_contact_email: string;
   application_contact_title: string;
   it_manager: string;
-  it_manager_email: string;
+  itmanageremail: string;
   it_manager_title: string;
   it_vp: string;
-  it_vp_email: string;
+  itvpemail: string;
   it_vp_title: string;
   user_interface: string;
+  isusapp: string;
 }
 
 const { Search } = Input;
@@ -46,9 +47,9 @@ export default function Home() {
         // Initialize Fuse.js with our data
         const fuseOptions = {
           keys: [
-            'name',
+            'application_name',
             'apm_application_code',
-            'description',
+            'application_description',
             'application_contact',
             'it_manager',
             'it_vp'
@@ -148,7 +149,7 @@ export default function Home() {
                   key={app.apm_application_code}
                   title={
                     <div>
-                      <Title level={4} style={{ margin: 0 }}>{app.name}</Title>
+                      <Title level={4} style={{ margin: 0 }}>{app.application_name}</Title>
                       <Text type="secondary">Code: {app.apm_application_code}</Text>
                     </div>
                   }
@@ -157,16 +158,16 @@ export default function Home() {
                 >
                   
                     <div style={{ marginBottom: '12px' }}>
-                      <Tag color={app.lifecycle === "Production" ? "green" : "blue"}>{app.lifecycle}</Tag>
+                      <Tag color={app.application_lifecycle === "Production" ? "green" : "blue"}>{app.application_lifecycle}</Tag>
                       <Tag color={app.critical_information_asset === "Yes" ? "red" : "default"}>
                         CIA: {app.critical_information_asset}
                       </Tag>
-                      <Tag color={app.appsec_release_assessment_required === "Yes" ? "orange" : "default"}>
-                        AppSec: {app.appsec_release_assessment_required}
+                      <Tag color={app.application_security_release_assessment_required === "Yes" ? "orange" : "default"}>
+                        AppSec: {app.application_security_release_assessment_required}
                       </Tag>
                     </div>
                   <div>
-                    <Paragraph>{app.description}</Paragraph>
+                    <Paragraph>{app.application_description}</Paragraph>
                     
                     
                     <Text type="secondary">User Interface: {app.user_interface}</Text>
@@ -188,10 +189,10 @@ export default function Home() {
                       <div style={{ flex: '1 1 30%', minWidth: '200px' }}>
                         <Text strong>IT Manager:</Text> {app.it_manager} ({app.it_manager_title})
                         <br />
-                        <a href={`mailto:${app.it_manager_email}`}>
+                        <a href={`mailto:${app.itmanageremail}`}>
                           <Space>
                             <MailOutlined />
-                            <Text type="secondary">{app.it_manager_email}</Text>
+                            <Text type="secondary">{app.itmanageremail}</Text>
                           </Space>
                         </a>
                       </div>
@@ -199,10 +200,10 @@ export default function Home() {
                       <div style={{ flex: '1 1 30%', minWidth: '200px' }}>
                         <Text strong>IT VP:</Text> {app.it_vp} ({app.it_vp_title})
                         <br />
-                        <a href={`mailto:${app.it_vp_email}`}>
+                        <a href={`mailto:${app.itvpemail}`}>
                           <Space>
                             <MailOutlined />
-                            <Text type="secondary">{app.it_vp_email}</Text>
+                            <Text type="secondary">{app.itvpemail}</Text>
                           </Space>
                         </a>
                       </div>
