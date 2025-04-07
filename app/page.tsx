@@ -39,10 +39,24 @@ export default function Home() {
             size="large"
             value={searchValue}
             onChange={(e) => {
-              setSearchValue(e.target.value);
-              if (!e.target.value) {
+              const value = e.target.value;
+              setSearchValue(value);
+              
+              if (!value.trim()) {
                 setSearchResults(data);
+                return;
               }
+              
+              const filteredResults = data.filter(item => {
+                const searchTerm = value.toLowerCase();
+                return (
+                  item.name.toLowerCase().includes(searchTerm) ||
+                  item.description.toLowerCase().includes(searchTerm) ||
+                  item.apm_application_code.toLowerCase().includes(searchTerm)
+                );
+              });
+              
+              setSearchResults(filteredResults);
             }}
             onSearch={onSearch}
           />
