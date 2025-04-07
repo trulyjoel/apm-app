@@ -38,9 +38,9 @@ export default function Home() {
     console.log("Search results:", filteredResults);
   };
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center">
-        <div className="w-full max-w-md mb-4">
+    <div className="flex flex-col min-h-screen p-8 pb-20 font-[family-name:var(--font-geist-sans)]">
+      <header className="w-full flex justify-center py-4 sticky top-0 bg-white z-10 border-b">
+        <div className="w-full max-w-2xl">
           <Search
             placeholder="Search applications..."
             allowClear
@@ -70,8 +70,10 @@ export default function Home() {
             onSearch={onSearch}
           />
         </div>
-        
-        <div className="w-full max-w-4xl">
+      </header>
+      
+      <main className="flex flex-col items-center flex-grow pt-8">
+        <div className="w-full max-w-6xl">
           {!isLoaded ? (
             <Card loading className="text-center">
               <Text>Loading applications...</Text>
@@ -150,7 +152,7 @@ export default function Home() {
           )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+      <footer className="flex gap-[24px] flex-wrap items-center justify-center py-4">
       </footer>
     </div>
   );
