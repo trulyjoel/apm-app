@@ -4,29 +4,8 @@ import { Input, Card, Typography, Divider, Tag, Space, message, Button } from "a
 import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Fuse from 'fuse.js';
 import data from "./data.json";
-
-// Define the type for application data
-interface Application {
-  apm_application_code: string;
-  application_name: string;
-  application_description: string;
-  application_lifecycle: string;
-  critical_information_asset: string;
-  application_security_release_assessment_required: string;
-  application_contact: string;
-  application_contact_email: string;
-  application_contact_title: string;
-  it_manager: string;
-  itmanageremail: string;
-  it_manager_title: string;
-  it_vp: string;
-  itvpemail: string;
-  it_vp_title: string;
-  user_interface: string;
-  isusapp: string;
-}
+import { Application, initializeDatabase, searchApplications } from "./utils/db";
 
 const { Search } = Input;
 const { Text, Title, Paragraph } = Typography;
@@ -35,56 +14,40 @@ export default function Home() {
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<Application[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [fuse, setFuse] = useState<Fuse<Application> | null>(null);
-  
-  // Initialize loading state and ensure data is loaded client-side
+  // Initialize loading state and ensure data is loaded into IndexedDB
   useEffect(() => {
-    try {
-      // This ensures data is loaded client-side
-      if (data && Array.isArray(data)) {
-        console.log("Data loaded successfully:", data.length, "applications");
-        
-        // Initialize Fuse.js with our data
-        const fuseOptions = {
-          keys: [
-            'application_name',
-            'apm_application_code',
-            'application_description',
-            'application_contact',
-            'it_manager',
-            'it_vp'
-          ],
-          threshold: 0.3, // Lower threshold means more strict matching
-          includeScore: true
-        };
-        
-        setFuse(new Fuse(data, fuseOptions));
-      } else {
-        console.error("Data is not in expected format:", data);
+    const loadData = async () => {
+      try {
+        // Initialize IndexedDB with our data
+        if (data && Array.isArray(data)) {
+          await initializeDatabase(data);
+          console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
+        } else {
+          console.error("Data is not in expected format:", data);
+        }
+        setIsLoaded(true);
+      } catch (error) {
+        console.error("Error loading data into IndexedDB:", error);
+        message.error("Failed to load application data. Please refresh the page.");
+        setIsLoaded(true);
       }
-      setIsLoaded(true);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      message.error("Failed to load application data. Please refresh the page.");
-      setIsLoaded(true);
-    }
+    };
+    
+    loadData();
   }, []);
   
-  const onSearch = (value: string) => {
+  const onSearch = async (value: string) => {
     try {
-      if (!value.trim() || !fuse) {
+      if (!value.trim()) {
         setSearchResults([]);
         return;
       }
       
-      // Use Fuse.js to search
-      const results = fuse.search(value);
+      // Use IndexedDB to search
+      const results = await searchApplications(value);
       
-      // Extract the items from the Fuse.js results
-      const filteredResults = results.map(result => result.item);
-      
-      setSearchResults(filteredResults);
-      console.log("Search results:", filteredResults.length, "applications found");
+      setSearchResults(results);
+      console.log("Search results:", results.length, "applications found");
     } catch (error) {
       console.error("Error during search:", error);
       message.error("An error occurred during search. Please try again.");
@@ -100,23 +63,19 @@ export default function Home() {
             enterButton={false}
             size="large"
             value={searchValue}
-            onChange={(e) => {
+            onChange={async (e) => {
               try {
                 const value = e.target.value;
                 setSearchValue(value);
                 
-                if (!value.trim() || !fuse) {
+                if (!value.trim()) {
                   setSearchResults([]);
                   return;
                 }
                 
-                // Use Fuse.js to search
-                const results = fuse.search(value);
-                
-                // Extract the items from the Fuse.js results
-                const filteredResults = results.map(result => result.item);
-                
-                setSearchResults(filteredResults);
+                // Use IndexedDB to search
+                const results = await searchApplications(value);
+                setSearchResults(results);
               } catch (error) {
                 console.error("Error during search input:", error);
                 message.error("An error occurred while searching. Please try again.");

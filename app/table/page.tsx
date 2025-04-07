@@ -6,29 +6,8 @@ import type { ColumnsType, ColumnType } from "antd/es/table";
 import type { FilterConfirmProps } from "antd/es/table/interface";
 import Highlighter from "react-highlight-words";
 import Link from "next/link";
-import Fuse from 'fuse.js';
 import data from "../data.json";
-
-// Define the type for application data
-interface Application {
-  apm_application_code: string;
-  application_name: string;
-  application_description: string;
-  application_lifecycle: string;
-  critical_information_asset: string;
-  application_security_release_assessment_required: string;
-  application_contact: string;
-  application_contact_email: string;
-  application_contact_title: string;
-  it_manager: string;
-  itmanageremail: string;
-  it_manager_title: string;
-  it_vp: string;
-  itvpemail: string;
-  it_vp_title: string;
-  user_interface: string;
-  isusapp: string;
-}
+import { Application, initializeDatabase, getAllApplications, searchApplications } from "../utils/db";
 
 type DataIndex = keyof Application;
 
@@ -40,43 +19,34 @@ export default function TablePage() {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
-  const [fuse, setFuse] = useState<Fuse<Application> | null>(null);
   const searchInput = useRef<any>(null);
 
   useEffect(() => {
-    try {
-      if (data && Array.isArray(data)) {
-        setApplications(data);
-        setFilteredApplications(data);
-        console.log("Data loaded successfully:", data.length, "applications");
-        
-        // Initialize Fuse.js with our data
-        const fuseOptions = {
-          keys: [
-            'application_name',
-            'apm_application_code',
-            'application_description',
-            'application_contact',
-            'it_manager',
-            'it_vp',
-            'user_interface'
-          ],
-          threshold: 0.3,
-          includeScore: true
-        };
-        
-        setFuse(new Fuse(data, fuseOptions));
-      } else {
-        console.error("Data is not in expected format:", data);
+    const loadData = async () => {
+      try {
+        // Initialize IndexedDB with our data
+        if (data && Array.isArray(data)) {
+          await initializeDatabase(data);
+          console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
+          
+          // Get all applications from IndexedDB
+          const apps = await getAllApplications();
+          setApplications(apps);
+          setFilteredApplications(apps);
+        } else {
+          console.error("Data is not in expected format:", data);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading data from IndexedDB:", error);
+        setLoading(false);
       }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      setLoading(false);
-    }
+    };
+    
+    loadData();
   }, []);
 
-  const handleSearch = (
+  const handleSearch = async (
     selectedKeys: string[],
     confirm: (param?: FilterConfirmProps) => void,
     dataIndex: DataIndex,
@@ -86,12 +56,13 @@ export default function TablePage() {
     setSearchText(searchValue);
     setSearchedColumn(dataIndex);
     
-    // Use Fuse.js for global search if no specific column is selected
-    if (fuse && searchValue && dataIndex === 'global') {
-      const results = fuse.search(searchValue);
-      setFilteredApplications(results.map(result => result.item));
+    // Use IndexedDB for global search if no specific column is selected
+    if (searchValue && dataIndex === 'global') {
+      const results = await searchApplications(searchValue);
+      setFilteredApplications(results);
     } else if (!searchValue) {
-      setFilteredApplications(applications);
+      const allApps = await getAllApplications();
+      setFilteredApplications(allApps);
     }
   };
 
@@ -293,12 +264,13 @@ export default function TablePage() {
             placeholder="Global search across all fields"
             allowClear
             enterButton
-            onSearch={(value) => {
-              if (fuse && value) {
-                const results = fuse.search(value);
-                setFilteredApplications(results.map(result => result.item));
+            onSearch={async (value) => {
+              if (value) {
+                const results = await searchApplications(value);
+                setFilteredApplications(results);
               } else {
-                setFilteredApplications(applications);
+                const allApps = await getAllApplications();
+                setFilteredApplications(allApps);
               }
             }}
           />
