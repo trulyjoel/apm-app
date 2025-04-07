@@ -137,9 +137,7 @@ export default function Home() {
                   hoverable
                   style={{ height: '100%' }}
                 >
-                  <div>
-                    <Paragraph>{app.description}</Paragraph>
-                    
+                  
                     <div style={{ marginBottom: '12px' }}>
                       <Tag color={app.lifecycle === "Production" ? "green" : "blue"}>{app.lifecycle}</Tag>
                       <Tag color={app.critical_information_asset === "Yes" ? "red" : "default"}>
@@ -149,6 +147,9 @@ export default function Home() {
                         AppSec: {app.appsec_release_assessment_required}
                       </Tag>
                     </div>
+                  <div>
+                    <Paragraph>{app.description}</Paragraph>
+                    
                     
                     <Text type="secondary">User Interface: {app.user_interface}</Text>
                     
