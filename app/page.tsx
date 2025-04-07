@@ -1,14 +1,21 @@
 "use client";
 import Image from "next/image";
 import { Input } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import data from "./data.json";
 
 const { Search } = Input;
 
 export default function Home() {
   const [searchValue, setSearchValue] = useState("");
-  const [searchResults, setSearchResults] = useState(data);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Initialize data on client side
+  useEffect(() => {
+    setSearchResults(data);
+    setIsLoaded(true);
+  }, []);
   
   const onSearch = (value: string) => {
     if (!value.trim()) {
@@ -63,7 +70,11 @@ export default function Home() {
         </div>
         
         <div className="w-full max-w-4xl">
-          {searchResults.length > 0 ? (
+          {!isLoaded ? (
+            <div className="text-center p-4">
+              <p>Loading applications...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {searchResults.map((app) => (
                 <div key={app.apm_application_code} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
