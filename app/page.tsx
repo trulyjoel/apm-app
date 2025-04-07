@@ -5,12 +5,32 @@ import { MailOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import data from "./data.json";
 
+// Define the type for application data
+interface Application {
+  apm_application_code: string;
+  name: string;
+  description: string;
+  lifecycle: string;
+  critical_information_asset: string;
+  appsec_release_assessment_required: string;
+  application_contact: string;
+  application_contact_email: string;
+  application_contact_title: string;
+  it_manager: string;
+  it_manager_email: string;
+  it_manager_title: string;
+  it_vp: string;
+  it_vp_email: string;
+  it_vp_title: string;
+  user_interface: string;
+}
+
 const { Search } = Input;
 const { Text, Title, Paragraph } = Typography;
 
 export default function Home() {
   const [searchValue, setSearchValue] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<Application[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   
   // Initialize loading state only, not results
