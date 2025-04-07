@@ -16,7 +16,11 @@ const { Title } = Typography;
 export default function TablePage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef<any>(null);
@@ -29,10 +33,11 @@ export default function TablePage() {
           await initializeDatabase(data);
           console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
           
-          // Get all applications from IndexedDB
-          const apps = await getAllApplications();
-          setApplications(apps);
-          setFilteredApplications(apps);
+          // Get applications for the first page
+          const { results, total } = await getPaginatedApplications(currentPage, pageSize);
+          setApplications(results);
+          setFilteredApplications(results);
+          setTotalResults(total);
         } else {
           console.error("Data is not in expected format:", data);
         }
@@ -44,7 +49,7 @@ export default function TablePage() {
     };
     
     loadData();
-  }, []);
+  }, [currentPage, pageSize]);
 
   const handleSearch = async (
     selectedKeys: string[],
@@ -55,14 +60,23 @@ export default function TablePage() {
     confirm();
     setSearchText(searchValue);
     setSearchedColumn(dataIndex);
+    setSearching(true);
     
-    // Use IndexedDB for global search if no specific column is selected
-    if (searchValue && dataIndex === 'global') {
-      const results = await searchApplications(searchValue);
-      setFilteredApplications(results);
-    } else if (!searchValue) {
-      const allApps = await getAllApplications();
-      setFilteredApplications(allApps);
+    try {
+      // Use IndexedDB for global search if no specific column is selected
+      if (searchValue && dataIndex === 'global') {
+        const { results, total } = await searchApplications(searchValue, 1, pageSize);
+        setFilteredApplications(results);
+        setTotalResults(total);
+        setCurrentPage(1);
+      } else if (!searchValue) {
+        const { results, total } = await getPaginatedApplications(1, pageSize);
+        setFilteredApplications(results);
+        setTotalResults(total);
+        setCurrentPage(1);
+      }
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -264,13 +278,23 @@ export default function TablePage() {
             placeholder="Global search across all fields"
             allowClear
             enterButton
+            loading={searching}
             onSearch={async (value) => {
-              if (value) {
-                const results = await searchApplications(value);
-                setFilteredApplications(results);
-              } else {
-                const allApps = await getAllApplications();
-                setFilteredApplications(allApps);
+              setSearching(true);
+              try {
+                if (value) {
+                  const { results, total } = await searchApplications(value, 1, pageSize);
+                  setFilteredApplications(results);
+                  setTotalResults(total);
+                  setCurrentPage(1);
+                } else {
+                  const { results, total } = await getPaginatedApplications(1, pageSize);
+                  setFilteredApplications(results);
+                  setTotalResults(total);
+                  setCurrentPage(1);
+                }
+              } finally {
+                setSearching(false);
               }
             }}
           />
@@ -280,11 +304,32 @@ export default function TablePage() {
           columns={columns} 
           dataSource={filteredApplications}
           rowKey="apm_application_code"
-          loading={loading}
+          loading={loading || searching}
           pagination={{ 
-            pageSize: 10,
+            current: currentPage,
+            pageSize: pageSize,
+            total: totalResults,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50'],
+            onChange: async (page, pageSize) => {
+              setCurrentPage(page);
+              setPageSize(pageSize);
+              setLoading(true);
+              
+              try {
+                if (searchText) {
+                  const { results, total } = await searchApplications(searchText, page, pageSize);
+                  setFilteredApplications(results);
+                  setTotalResults(total);
+                } else {
+                  const { results, total } = await getPaginatedApplications(page, pageSize);
+                  setFilteredApplications(results);
+                  setTotalResults(total);
+                }
+              } finally {
+                setLoading(false);
+              }
+            }
           }}
           scroll={{ x: 1200 }}
         />

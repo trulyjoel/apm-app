@@ -68,35 +68,121 @@ export const initializeDatabase = async (data: Application[]): Promise<void> => 
   console.log('Database initialized with', data.length, 'applications');
 };
 
-// Get all applications
-export const getAllApplications = async (): Promise<Application[]> => {
+// Get all applications (with optional pagination)
+export const getAllApplications = async (page?: number, pageSize?: number): Promise<Application[]> => {
+  if (page !== undefined && pageSize !== undefined) {
+    const { results } = await getPaginatedApplications(page, pageSize);
+    return results;
+  }
+  
+  // If no pagination is requested, return all (use with caution for large datasets)
   const db = await openDatabase();
   return db.getAll('applications');
 };
 
-// Search applications by a query string across multiple fields
-export const searchApplications = async (query: string): Promise<Application[]> => {
+// Search applications by a query string across multiple fields with pagination
+export const searchApplications = async (
+  query: string, 
+  page: number = 1, 
+  pageSize: number = 20
+): Promise<{ results: Application[], total: number }> => {
   if (!query.trim()) {
-    return getAllApplications();
+    return getPaginatedApplications(page, pageSize);
   }
   
   const db = await openDatabase();
-  const allApps = await db.getAll('applications');
   
   // Convert query to lowercase for case-insensitive search
   const lowerQuery = query.toLowerCase();
   
-  // Filter applications based on the query
-  return allApps.filter(app => {
-    return (
+  // Create a cursor to iterate through all applications
+  const tx = db.transaction('applications', 'readonly');
+  const store = tx.objectStore('applications');
+  const cursor = await store.openCursor();
+  
+  const matches: Application[] = [];
+  let count = 0;
+  
+  // Use cursor to process records in chunks without loading everything into memory
+  while (cursor) {
+    const app = cursor.value;
+    
+    // Check if the application matches the search criteria
+    if (
       app.application_name.toLowerCase().includes(lowerQuery) ||
       app.apm_application_code.toLowerCase().includes(lowerQuery) ||
       app.application_description.toLowerCase().includes(lowerQuery) ||
       app.application_contact.toLowerCase().includes(lowerQuery) ||
       app.it_manager.toLowerCase().includes(lowerQuery) ||
       app.it_vp.toLowerCase().includes(lowerQuery)
-    );
-  });
+    ) {
+      count++;
+      
+      // Only collect items for the requested page
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      
+      if (count > startIndex && count <= endIndex) {
+        matches.push(app);
+      }
+      
+      // If we've collected enough items for this page and counted beyond what we need
+      // for pagination info, we can stop
+      if (count > endIndex && matches.length >= pageSize) {
+        // Continue counting to get total, but limit to reasonable number
+        if (count > endIndex + 1000) {
+          break;
+        }
+      }
+    }
+    
+    await cursor.continue();
+  }
+  
+  await tx.done;
+  
+  return {
+    results: matches,
+    total: count
+  };
+};
+
+// Get applications with pagination
+export const getPaginatedApplications = async (
+  page: number = 1, 
+  pageSize: number = 20
+): Promise<{ results: Application[], total: number }> => {
+  const db = await openDatabase();
+  
+  // Get total count
+  const total = await db.count('applications');
+  
+  // Calculate start and end indices
+  const startIndex = (page - 1) * pageSize;
+  
+  // Get applications for the current page
+  const tx = db.transaction('applications', 'readonly');
+  const store = tx.objectStore('applications');
+  const cursor = await store.openCursor();
+  
+  const results: Application[] = [];
+  let count = 0;
+  
+  while (cursor && results.length < pageSize) {
+    if (count >= startIndex) {
+      results.push(cursor.value);
+    }
+    
+    count++;
+    await cursor.continue();
+  }
+  
+  await tx.done;
+  
+  return {
+    results,
+    total
+  };
 };
 
 // Get an application by its APM code

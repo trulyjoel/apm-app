@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { Input, Card, Typography, Divider, Tag, Space, message, Button } from "antd";
+import { Input, Card, Typography, Divider, Tag, Space, message, Button, Pagination } from "antd";
 import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -13,7 +13,11 @@ const { Text, Title, Paragraph } = Typography;
 export default function Home() {
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setSearchResults] = useState<Application[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   // Initialize loading state and ensure data is loaded into IndexedDB
   useEffect(() => {
     const loadData = async () => {
@@ -36,21 +40,29 @@ export default function Home() {
     loadData();
   }, []);
   
-  const onSearch = async (value: string) => {
+  const onSearch = async (value: string, page: number = 1) => {
     try {
+      setIsSearching(true);
+      
       if (!value.trim()) {
         setSearchResults([]);
+        setTotalResults(0);
+        setIsSearching(false);
         return;
       }
       
-      // Use IndexedDB to search
-      const results = await searchApplications(value);
+      // Use IndexedDB to search with pagination
+      const { results, total } = await searchApplications(value, page, pageSize);
       
       setSearchResults(results);
-      console.log("Search results:", results.length, "applications found");
+      setTotalResults(total);
+      setCurrentPage(page);
+      console.log("Search results:", results.length, "applications found, total:", total);
+      setIsSearching(false);
     } catch (error) {
       console.error("Error during search:", error);
       message.error("An error occurred during search. Please try again.");
+      setIsSearching(false);
     }
   };
   return (
@@ -63,25 +75,25 @@ export default function Home() {
             enterButton={false}
             size="large"
             value={searchValue}
-            onChange={async (e) => {
-              try {
-                const value = e.target.value;
-                setSearchValue(value);
-                
-                if (!value.trim()) {
-                  setSearchResults([]);
-                  return;
-                }
-                
-                // Use IndexedDB to search
-                const results = await searchApplications(value);
-                setSearchResults(results);
-              } catch (error) {
-                console.error("Error during search input:", error);
-                message.error("An error occurred while searching. Please try again.");
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchValue(value);
+              
+              if (!value.trim()) {
+                setSearchResults([]);
+                setTotalResults(0);
+                return;
               }
+              
+              // Debounce search to avoid excessive database operations
+              const debounceTimer = setTimeout(() => {
+                onSearch(value);
+              }, 300);
+              
+              return () => clearTimeout(debounceTimer);
             }}
-            onSearch={onSearch}
+            onSearch={(value) => onSearch(value)}
+            loading={isSearching}
           />
         </div>
         <Link href="/table">
@@ -100,6 +112,10 @@ export default function Home() {
           ) : !searchValue.trim() ? (
             <Card className="text-center">
               <Text>Start typing to search for applications...</Text>
+            </Card>
+          ) : isSearching ? (
+            <Card loading className="text-center">
+              <Text>Searching applications...</Text>
             </Card>
           ) : searchResults.length > 0 ? (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -175,6 +191,19 @@ export default function Home() {
             <Card className="text-center">
               <Text>No applications found matching your search.</Text>
             </Card>
+          )}
+          
+          {totalResults > pageSize && (
+            <div className="flex justify-center mt-6">
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={totalResults}
+                onChange={(page) => onSearch(searchValue, page)}
+                showSizeChanger={false}
+                showTotal={(total) => `Total ${total} items`}
+              />
+            </div>
           )}
         </div>
       </main>
