@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { Input } from "antd";
 import { useState } from "react";
+import data from "./data.json";
 
 const { Search } = Input;
 
