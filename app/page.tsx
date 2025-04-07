@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
-import { Input } from "antd";
+import { Input, Card, Typography, Divider, Tag } from "antd";
 import { useState, useEffect } from "react";
 import data from "./data.json";
 
 const { Search } = Input;
+const { Text, Title, Paragraph } = Typography;
 
 export default function Home() {
   const [searchValue, setSearchValue] = useState("");
@@ -71,41 +72,65 @@ export default function Home() {
         
         <div className="w-full max-w-4xl">
           {!isLoaded ? (
-            <div className="text-center p-4">
-              <p>Loading applications...</p>
-            </div>
+            <Card loading className="text-center">
+              <Text>Loading applications...</Text>
+            </Card>
           ) : searchResults.length > 0 ? (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {searchResults.map((app) => (
-                <div key={app.apm_application_code} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-semibold">{app.name}</h3>
-                  <p className="text-sm text-gray-600 mb-2">Code: {app.apm_application_code}</p>
-                  <p className="text-sm mb-2">{app.description}</p>
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <p>Lifecycle: {app.lifecycle}</p>
-                    <p>Critical Information Asset: {app.critical_information_asset}</p>
-                    <p>AppSec Release Assessment: {app.appsec_release_assessment_required}</p>
-                    <p>User Interface: {app.user_interface}</p>
+                <Card 
+                  key={app.apm_application_code}
+                  title={
+                    <div>
+                      <Title level={4} style={{ margin: 0 }}>{app.name}</Title>
+                      <Text type="secondary">Code: {app.apm_application_code}</Text>
+                    </div>
+                  }
+                  hoverable
+                  style={{ height: '100%' }}
+                >
+                  <Paragraph>{app.description}</Paragraph>
+                  
+                  <div style={{ marginBottom: '12px' }}>
+                    <Tag color={app.lifecycle === "Production" ? "green" : "blue"}>{app.lifecycle}</Tag>
+                    <Tag color={app.critical_information_asset === "Yes" ? "red" : "default"}>
+                      CIA: {app.critical_information_asset}
+                    </Tag>
+                    <Tag color={app.appsec_release_assessment_required === "Yes" ? "orange" : "default"}>
+                      AppSec: {app.appsec_release_assessment_required}
+                    </Tag>
+                  </div>
+                  
+                  <Text type="secondary">User Interface: {app.user_interface}</Text>
+                  
+                  <Divider orientation="left">Contacts</Divider>
+                  
+                  <div style={{ fontSize: '12px' }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <Text strong>Application Contact:</Text> {app.application_contact} ({app.application_contact_title})
+                      <br />
+                      <Text type="secondary">{app.application_contact_email}</Text>
+                    </div>
                     
-                    <div className="pt-2 border-t mt-2">
-                      <h4 className="font-medium mb-1">Contacts:</h4>
-                      <p>Application Contact: {app.application_contact} ({app.application_contact_title})</p>
-                      <p className="text-xs">{app.application_contact_email}</p>
-                      
-                      <p className="mt-1">IT Manager: {app.it_manager} ({app.it_manager_title})</p>
-                      <p className="text-xs">{app.it_manager_email}</p>
-                      
-                      <p className="mt-1">IT VP: {app.it_vp} ({app.it_vp_title})</p>
-                      <p className="text-xs">{app.it_vp_email}</p>
+                    <div style={{ marginBottom: '8px' }}>
+                      <Text strong>IT Manager:</Text> {app.it_manager} ({app.it_manager_title})
+                      <br />
+                      <Text type="secondary">{app.it_manager_email}</Text>
+                    </div>
+                    
+                    <div>
+                      <Text strong>IT VP:</Text> {app.it_vp} ({app.it_vp_title})
+                      <br />
+                      <Text type="secondary">{app.it_vp_email}</Text>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center p-4">
-              <p>No applications found matching your search.</p>
-            </div>
+            <Card className="text-center">
+              <Text>No applications found matching your search.</Text>
+            </Card>
           )}
         </div>
       </main>
