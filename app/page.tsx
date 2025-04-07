@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import { Input, Card, Typography, Divider, Tag } from "antd";
+import { Input, Card, Typography, Divider, Tag, Space } from "antd";
+import { MailOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import data from "./data.json";
 
@@ -109,19 +110,34 @@ export default function Home() {
                     <div style={{ marginBottom: '8px' }}>
                       <Text strong>Application Contact:</Text> {app.application_contact} ({app.application_contact_title})
                       <br />
-                      <Text type="secondary">{app.application_contact_email}</Text>
+                      <a href={`mailto:${app.application_contact_email}`}>
+                        <Space>
+                          <MailOutlined />
+                          <Text type="secondary">{app.application_contact_email}</Text>
+                        </Space>
+                      </a>
                     </div>
                     
                     <div style={{ marginBottom: '8px' }}>
                       <Text strong>IT Manager:</Text> {app.it_manager} ({app.it_manager_title})
                       <br />
-                      <Text type="secondary">{app.it_manager_email}</Text>
+                      <a href={`mailto:${app.it_manager_email}`}>
+                        <Space>
+                          <MailOutlined />
+                          <Text type="secondary">{app.it_manager_email}</Text>
+                        </Space>
+                      </a>
                     </div>
                     
                     <div>
                       <Text strong>IT VP:</Text> {app.it_vp} ({app.it_vp_title})
                       <br />
-                      <Text type="secondary">{app.it_vp_email}</Text>
+                      <a href={`mailto:${app.it_vp_email}`}>
+                        <Space>
+                          <MailOutlined />
+                          <Text type="secondary">{app.it_vp_email}</Text>
+                        </Space>
+                      </a>
                     </div>
                   </div>
                 </Card>
