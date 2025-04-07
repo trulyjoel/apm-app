@@ -72,7 +72,7 @@ export default function Home() {
         </div>
       </header>
       
-      <main className="flex flex-col items-center flex-grow pt-8">
+      <main className="flex flex-col items-center flex-grow pt-12">
         <div className="w-full max-w-6xl">
           {!isLoaded ? (
             <Card loading className="text-center">
