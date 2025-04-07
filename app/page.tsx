@@ -13,9 +13,8 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   
-  // Initialize data on client side
+  // Initialize loading state only, not results
   useEffect(() => {
-    setSearchResults(data);
     setIsLoaded(true);
   }, []);
   
@@ -77,6 +76,10 @@ export default function Home() {
           {!isLoaded ? (
             <Card loading className="text-center">
               <Text>Loading applications...</Text>
+            </Card>
+          ) : !searchValue.trim() ? (
+            <Card className="text-center">
+              <Text>Start typing to search for applications...</Text>
             </Card>
           ) : searchResults.length > 0 ? (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
