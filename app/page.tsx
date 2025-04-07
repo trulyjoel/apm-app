@@ -35,7 +35,7 @@ export default function Home() {
           <Search
             placeholder="Search applications..."
             allowClear
-            enterButton="Search"
+            enterButton={false}
             size="large"
             value={searchValue}
             onChange={(e) => {
