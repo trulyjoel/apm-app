@@ -92,54 +92,60 @@ export default function Home() {
                   hoverable
                   style={{ height: '100%' }}
                 >
-                  <Paragraph>{app.description}</Paragraph>
-                  
-                  <div style={{ marginBottom: '12px' }}>
-                    <Tag color={app.lifecycle === "Production" ? "green" : "blue"}>{app.lifecycle}</Tag>
-                    <Tag color={app.critical_information_asset === "Yes" ? "red" : "default"}>
-                      CIA: {app.critical_information_asset}
-                    </Tag>
-                    <Tag color={app.appsec_release_assessment_required === "Yes" ? "orange" : "default"}>
-                      AppSec: {app.appsec_release_assessment_required}
-                    </Tag>
-                  </div>
-                  
-                  <Text type="secondary">User Interface: {app.user_interface}</Text>
-                  
-                  <Divider orientation="left">Contacts</Divider>
-                  
-                  <div style={{ fontSize: '12px' }}>
-                    <div style={{ marginBottom: '8px' }}>
-                      <Text strong>Application Contact:</Text> {app.application_contact} ({app.application_contact_title})
-                      <br />
-                      <a href={`mailto:${app.application_contact_email}`}>
-                        <Space>
-                          <MailOutlined />
-                          <Text type="secondary">{app.application_contact_email}</Text>
-                        </Space>
-                      </a>
+                  <div style={{ display: 'flex', flexDirection: 'row', gap: '16px' }}>
+                    {/* Left side - App details */}
+                    <div style={{ flex: '1 1 60%' }}>
+                      <Paragraph>{app.description}</Paragraph>
+                      
+                      <div style={{ marginBottom: '12px' }}>
+                        <Tag color={app.lifecycle === "Production" ? "green" : "blue"}>{app.lifecycle}</Tag>
+                        <Tag color={app.critical_information_asset === "Yes" ? "red" : "default"}>
+                          CIA: {app.critical_information_asset}
+                        </Tag>
+                        <Tag color={app.appsec_release_assessment_required === "Yes" ? "orange" : "default"}>
+                          AppSec: {app.appsec_release_assessment_required}
+                        </Tag>
+                      </div>
+                      
+                      <Text type="secondary">User Interface: {app.user_interface}</Text>
                     </div>
                     
-                    <div style={{ marginBottom: '8px' }}>
-                      <Text strong>IT Manager:</Text> {app.it_manager} ({app.it_manager_title})
-                      <br />
-                      <a href={`mailto:${app.it_manager_email}`}>
-                        <Space>
-                          <MailOutlined />
-                          <Text type="secondary">{app.it_manager_email}</Text>
-                        </Space>
-                      </a>
-                    </div>
-                    
-                    <div>
-                      <Text strong>IT VP:</Text> {app.it_vp} ({app.it_vp_title})
-                      <br />
-                      <a href={`mailto:${app.it_vp_email}`}>
-                        <Space>
-                          <MailOutlined />
-                          <Text type="secondary">{app.it_vp_email}</Text>
-                        </Space>
-                      </a>
+                    {/* Right side - Contact information */}
+                    <div style={{ flex: '1 1 40%', borderLeft: '1px solid #f0f0f0', paddingLeft: '16px', fontSize: '12px' }}>
+                      <Title level={5} style={{ marginTop: 0 }}>Contacts</Title>
+                      
+                      <div style={{ marginBottom: '8px' }}>
+                        <Text strong>Application Contact:</Text> {app.application_contact} ({app.application_contact_title})
+                        <br />
+                        <a href={`mailto:${app.application_contact_email}`}>
+                          <Space>
+                            <MailOutlined />
+                            <Text type="secondary">{app.application_contact_email}</Text>
+                          </Space>
+                        </a>
+                      </div>
+                      
+                      <div style={{ marginBottom: '8px' }}>
+                        <Text strong>IT Manager:</Text> {app.it_manager} ({app.it_manager_title})
+                        <br />
+                        <a href={`mailto:${app.it_manager_email}`}>
+                          <Space>
+                            <MailOutlined />
+                            <Text type="secondary">{app.it_manager_email}</Text>
+                          </Space>
+                        </a>
+                      </div>
+                      
+                      <div>
+                        <Text strong>IT VP:</Text> {app.it_vp} ({app.it_vp_title})
+                        <br />
+                        <a href={`mailto:${app.it_vp_email}`}>
+                          <Space>
+                            <MailOutlined />
+                            <Text type="secondary">{app.it_vp_email}</Text>
+                          </Space>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </Card>
