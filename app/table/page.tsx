@@ -7,7 +7,7 @@ import type { FilterConfirmProps } from "antd/es/table/interface";
 import Highlighter from "react-highlight-words";
 import Link from "next/link";
 import data from "../data.json";
-import { Application, initializeDatabase, getAllApplications, searchApplications } from "../utils/db";
+import { Application, initializeDatabase, getAllApplications, searchApplications, getPaginatedApplications } from "../utils/db";
 
 type DataIndex = keyof Application;
 
@@ -275,7 +275,7 @@ export default function TablePage() {
       <main className="flex-grow">
         <div style={{ marginBottom: 16 }}>
           <Input.Search
-            placeholder="Global search across all fields"
+            placeholder="Fuzzy search by name, code, or description"
             allowClear
             enterButton
             loading={searching}

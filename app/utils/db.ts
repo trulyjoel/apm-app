@@ -80,6 +80,8 @@ export const getAllApplications = async (page?: number, pageSize?: number): Prom
   return db.getAll('applications');
 };
 
+import Fuse from 'fuse.js';
+
 // Search applications by a query string across title, description, and code with pagination
 export const searchApplications = async (
   query: string, 
@@ -90,58 +92,76 @@ export const searchApplications = async (
     return getPaginatedApplications(page, pageSize);
   }
   
+  // Get all applications from IndexedDB
   const db = await openDatabase();
   
-  // Convert query to lowercase for case-insensitive search
-  const lowerQuery = query.toLowerCase();
+  // For large datasets, we'll use a chunking approach
+  const CHUNK_SIZE = 1000; // Process 1000 records at a time
+  let allMatches: Application[] = [];
+  let processedCount = 0;
+  let hasMore = true;
   
-  // Create a cursor to iterate through all applications
-  const tx = db.transaction('applications', 'readonly');
-  const store = tx.objectStore('applications');
-  const cursor = await store.openCursor();
-  
-  const matches: Application[] = [];
-  let count = 0;
-  
-  // Use cursor to process records in chunks without loading everything into memory
-  while (cursor) {
-    const app = cursor.value;
+  while (hasMore) {
+    // Get a chunk of applications
+    const tx = db.transaction('applications', 'readonly');
+    const store = tx.objectStore('applications');
+    const cursor = await store.openCursor();
     
-    // Check if the application matches the search criteria
-    // Only search title, description, and apm_application_code
-    if (
-      app.application_name.toLowerCase().includes(lowerQuery) ||
-      app.apm_application_code.toLowerCase().includes(lowerQuery) ||
-      app.application_description.toLowerCase().includes(lowerQuery)
-    ) {
-      count++;
-      
-      // Only collect items for the requested page
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      
-      if (count > startIndex && count <= endIndex) {
-        matches.push(app);
-      }
-      
-      // If we've collected enough items for this page and counted beyond what we need
-      // for pagination info, we can stop
-      if (count > endIndex && matches.length >= pageSize) {
-        // Continue counting to get total, but limit to reasonable number
-        if (count > endIndex + 1000) {
-          break;
-        }
-      }
+    const chunk: Application[] = [];
+    let chunkCount = 0;
+    
+    // Skip already processed records
+    while (cursor && chunkCount < processedCount) {
+      await cursor.continue();
+      chunkCount++;
     }
     
-    await cursor.continue();
+    // Get the next chunk
+    while (cursor && chunk.length < CHUNK_SIZE) {
+      chunk.push(cursor.value);
+      await cursor.continue();
+    }
+    
+    await tx.done;
+    
+    // If we got fewer records than the chunk size, we've processed all records
+    hasMore = chunk.length === CHUNK_SIZE;
+    processedCount += chunk.length;
+    
+    if (chunk.length === 0) break;
+    
+    // Configure Fuse.js for this chunk
+    const fuseOptions = {
+      keys: [
+        'application_name',
+        'apm_application_code',
+        'application_description'
+      ],
+      threshold: 0.3, // Lower threshold means more strict matching
+      includeScore: true
+    };
+    
+    const fuse = new Fuse(chunk, fuseOptions);
+    const fuseResults = fuse.search(query);
+    
+    // Add the matches from this chunk to our overall results
+    allMatches = [...allMatches, ...fuseResults.map(result => result.item)];
+    
+    // If we have enough matches for several pages, we can stop processing
+    if (allMatches.length > (page + 5) * pageSize && hasMore) {
+      hasMore = false;
+    }
   }
   
-  await tx.done;
+  // Calculate total and paginate results
+  const total = allMatches.length;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, total);
+  const paginatedResults = allMatches.slice(startIndex, endIndex);
   
   return {
-    results: matches,
-    total: count
+    results: paginatedResults,
+    total
   };
 };
 
