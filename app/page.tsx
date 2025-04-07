@@ -70,7 +70,7 @@ export default function Home() {
       <header className="w-full flex justify-between items-center py-4 sticky top-0 bg-white z-10 border-b px-4">
         <div className="w-full max-w-2xl">
           <Search
-            placeholder="Search by name, APM code, or description"
+            placeholder="Search by application name, APM code, or description only"
             allowClear
             enterButton={false}
             size="large"

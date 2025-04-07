@@ -80,7 +80,7 @@ export const getAllApplications = async (page?: number, pageSize?: number): Prom
   return db.getAll('applications');
 };
 
-// Search applications by a query string across multiple fields with pagination
+// Search applications by a query string across title, description, and code with pagination
 export const searchApplications = async (
   query: string, 
   page: number = 1, 
@@ -108,13 +108,11 @@ export const searchApplications = async (
     const app = cursor.value;
     
     // Check if the application matches the search criteria
+    // Only search title, description, and apm_application_code
     if (
       app.application_name.toLowerCase().includes(lowerQuery) ||
       app.apm_application_code.toLowerCase().includes(lowerQuery) ||
-      app.application_description.toLowerCase().includes(lowerQuery) ||
-      app.application_contact.toLowerCase().includes(lowerQuery) ||
-      app.it_manager.toLowerCase().includes(lowerQuery) ||
-      app.it_vp.toLowerCase().includes(lowerQuery)
+      app.application_description.toLowerCase().includes(lowerQuery)
     ) {
       count++;
       
