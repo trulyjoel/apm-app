@@ -95,63 +95,27 @@ export const searchApplications = async (
   // Get all applications from IndexedDB
   const db = await openDatabase();
   
-  // For large datasets, we'll use a chunking approach
-  const CHUNK_SIZE = 1000; // Process 1000 records at a time
-  let allMatches: Application[] = [];
-  let processedCount = 0;
-  let hasMore = true;
+  // Get all applications first (this is more reliable for smaller datasets)
+  const allApplications = await db.getAll('applications');
   
-  while (hasMore) {
-    // Get a chunk of applications
-    const tx = db.transaction('applications', 'readonly');
-    const store = tx.objectStore('applications');
-    const cursor = await store.openCursor();
+  // Configure Fuse.js for fuzzy search
+  const fuseOptions = {
+    keys: [
+      'application_name',
+      'apm_application_code',
+      'application_description'
+    ],
+    threshold: 0.3, // Lower threshold means more strict matching
+    includeScore: true
+  };
+  
+  const fuse = new Fuse(allApplications, fuseOptions);
+  const fuseResults = fuse.search(query);
+  
+  // Extract just the items from the Fuse results
+  const allMatches = fuseResults.map(result => result.item);
     
-    const chunk: Application[] = [];
-    let chunkCount = 0;
-    
-    // Skip already processed records
-    while (cursor && chunkCount < processedCount) {
-      await cursor.continue();
-      chunkCount++;
-    }
-    
-    // Get the next chunk
-    while (cursor && chunk.length < CHUNK_SIZE) {
-      chunk.push(cursor.value);
-      await cursor.continue();
-    }
-    
-    await tx.done;
-    
-    // If we got fewer records than the chunk size, we've processed all records
-    hasMore = chunk.length === CHUNK_SIZE;
-    processedCount += chunk.length;
-    
-    if (chunk.length === 0) break;
-    
-    // Configure Fuse.js for this chunk
-    const fuseOptions = {
-      keys: [
-        'application_name',
-        'apm_application_code',
-        'application_description'
-      ],
-      threshold: 0.3, // Lower threshold means more strict matching
-      includeScore: true
-    };
-    
-    const fuse = new Fuse(chunk, fuseOptions);
-    const fuseResults = fuse.search(query);
-    
-    // Add the matches from this chunk to our overall results
-    allMatches = [...allMatches, ...fuseResults.map(result => result.item)];
-    
-    // If we have enough matches for several pages, we can stop processing
-    if (allMatches.length > (page + 5) * pageSize && hasMore) {
-      hasMore = false;
-    }
-  }
+  // Calculate total and paginate results
   
   // Calculate total and paginate results
   const total = allMatches.length;
@@ -175,27 +139,15 @@ export const getPaginatedApplications = async (
   // Get total count
   const total = await db.count('applications');
   
-  // Calculate start and end indices
+  // Get all applications (for smaller datasets this is more reliable)
+  const allApplications = await db.getAll('applications');
+  
+  // Calculate start and end indices for pagination
   const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, allApplications.length);
   
-  // Get applications for the current page
-  const tx = db.transaction('applications', 'readonly');
-  const store = tx.objectStore('applications');
-  const cursor = await store.openCursor();
-  
-  const results: Application[] = [];
-  let count = 0;
-  
-  while (cursor && results.length < pageSize) {
-    if (count >= startIndex) {
-      results.push(cursor.value);
-    }
-    
-    count++;
-    await cursor.continue();
-  }
-  
-  await tx.done;
+  // Get the slice for the current page
+  const results = allApplications.slice(startIndex, endIndex);
   
   return {
     results,

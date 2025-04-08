@@ -35,9 +35,15 @@ export default function TablePage() {
           
           // Get applications for the first page
           const { results, total } = await getPaginatedApplications(currentPage, pageSize);
+          console.log("Retrieved paginated results:", results.length, "applications, total:", total);
+          
           setApplications(results);
           setFilteredApplications(results);
           setTotalResults(total);
+          
+          if (results.length === 0 && total > 0) {
+            console.error("Pagination issue: Got 0 results but total is", total);
+          }
         } else {
           console.error("Data is not in expected format:", data);
         }

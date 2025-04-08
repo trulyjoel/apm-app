@@ -26,6 +26,15 @@ export default function Home() {
         if (data && Array.isArray(data)) {
           await initializeDatabase(data);
           console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
+          
+          // Verify data was loaded by retrieving all applications
+          const allApps = await getAllApplications();
+          console.log("Retrieved from IndexedDB:", allApps.length, "applications");
+          
+          if (allApps.length === 0) {
+            console.error("No applications found in IndexedDB after initialization");
+            message.error("Failed to load application data. Please refresh the page.");
+          }
         } else {
           console.error("Data is not in expected format:", data);
         }
