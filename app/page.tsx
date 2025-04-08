@@ -5,7 +5,7 @@ import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import data from "./data.json";
-import { Application, initializeDatabase, searchApplications, getAllApplications } from "./utils/db";
+import { Application, searchApplications, getAllApplications } from "./utils/db";
 
 const { Search } = Input;
 const { Text, Title, Paragraph } = Typography;
@@ -18,38 +18,27 @@ export default function Home() {
   const [pageSize, setPageSize] = useState(20);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  // Initialize loading state and ensure data is loaded into IndexedDB
+  
+  // Initialize loading state and verify data format
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Initialize IndexedDB with our data
-        if (data && Array.isArray(data)) {
-          await initializeDatabase(data);
-          console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
-          
-          // Verify data was loaded by retrieving all applications
-          const allApps = await getAllApplications();
-          console.log("Retrieved from IndexedDB:", allApps.length, "applications");
-          
-          if (allApps.length === 0) {
-            console.error("No applications found in IndexedDB after initialization");
-            message.error("Failed to load application data. Please refresh the page.");
-          }
-        } else {
-          console.error("Data is not in expected format:", data);
-        }
+    try {
+      // Verify data format
+      if (data && Array.isArray(data)) {
+        console.log("Data loaded successfully:", data.length, "applications");
         setIsLoaded(true);
-      } catch (error) {
-        console.error("Error loading data into IndexedDB:", error);
+      } else {
+        console.error("Data is not in expected format:", data);
         message.error("Failed to load application data. Please refresh the page.");
         setIsLoaded(true);
       }
-    };
-    
-    loadData();
+    } catch (error) {
+      console.error("Error loading data:", error);
+      message.error("Failed to load application data. Please refresh the page.");
+      setIsLoaded(true);
+    }
   }, []);
   
-  const onSearch = async (value: string, page: number = 1) => {
+  const onSearch = (value: string, page: number = 1) => {
     try {
       setIsSearching(true);
       
@@ -60,11 +49,10 @@ export default function Home() {
         return;
       }
       
-      // Use IndexedDB to search with pagination
-      const { results, total } = await searchApplications(value, page, pageSize);
+      // Use direct search with pagination
+      const { results, total } = searchApplications(data as Application[], value, page, pageSize);
       
       console.log("Search query:", value);
-      console.log("Raw search results:", results);
       console.log("Search results count:", results ? results.length : 0, "applications found, total:", total);
       
       setSearchResults(results || []);

@@ -1,16 +1,4 @@
-// IndexedDB utility functions
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-
-// Define the database schema
-interface AppDB extends DBSchema {
-  applications: {
-    key: string; // apm_application_code as the key
-    value: Application;
-    indexes: {
-      'by_name': string;
-    };
-  };
-}
+import Fuse from 'fuse.js';
 
 // Define the type for application data
 export interface Application {
@@ -33,76 +21,30 @@ export interface Application {
   isusapp: string;
 }
 
-// Database name and version
-const DB_NAME = 'apm-database';
-const DB_VERSION = 1;
-
-// Open the database
-export const openDatabase = async (): Promise<IDBPDatabase<AppDB>> => {
-  return openDB<AppDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      // Create the applications object store if it doesn't exist
-      if (!db.objectStoreNames.contains('applications')) {
-        const store = db.createObjectStore('applications', { keyPath: 'apm_application_code' });
-        // Create an index on the application name for faster searches
-        store.createIndex('by_name', 'application_name');
-      }
-    },
-  });
-};
-
-// Initialize the database with data
-export const initializeDatabase = async (data: Application[]): Promise<void> => {
-  const db = await openDatabase();
-  const tx = db.transaction('applications', 'readwrite');
-  
-  // Clear existing data
-  await tx.objectStore('applications').clear();
-  
-  // Add all applications
-  let addedCount = 0;
-  for (const app of data) {
-    await tx.objectStore('applications').add(app);
-    addedCount++;
-  }
-  
-  await tx.done;
-  console.log('Database initialized with', addedCount, 'applications out of', data.length);
-  
-  // Verify data was added
-  const count = await db.count('applications');
-  console.log('Actual count in database:', count);
-};
-
 // Get all applications (with optional pagination)
-export const getAllApplications = async (page?: number, pageSize?: number): Promise<Application[]> => {
+export const getAllApplications = (
+  data: Application[],
+  page?: number, 
+  pageSize?: number
+): Application[] => {
   if (page !== undefined && pageSize !== undefined) {
-    const { results } = await getPaginatedApplications(page, pageSize);
+    const { results } = getPaginatedApplications(data, page, pageSize);
     return results;
   }
   
-  // If no pagination is requested, return all (use with caution for large datasets)
-  const db = await openDatabase();
-  return db.getAll('applications');
+  return data;
 };
 
-import Fuse from 'fuse.js';
-
 // Search applications by a query string across title, description, and code with pagination
-export const searchApplications = async (
+export const searchApplications = (
+  data: Application[],
   query: string, 
   page: number = 1, 
   pageSize: number = 20
-): Promise<{ results: Application[], total: number }> => {
+): { results: Application[], total: number } => {
   if (!query.trim()) {
-    return getPaginatedApplications(page, pageSize);
+    return getPaginatedApplications(data, page, pageSize);
   }
-  
-  // Get all applications from IndexedDB
-  const db = await openDatabase();
-  
-  // Get all applications first (this is more reliable for smaller datasets)
-  const allApplications = await db.getAll('applications');
   
   // Configure Fuse.js for fuzzy search
   const fuseOptions = {
@@ -115,7 +57,7 @@ export const searchApplications = async (
     includeScore: true
   };
   
-  const fuse = new Fuse(allApplications, fuseOptions);
+  const fuse = new Fuse(data, fuseOptions);
   const fuseResults = fuse.search(query);
   
   // Extract just the items from the Fuse results
@@ -134,24 +76,20 @@ export const searchApplications = async (
 };
 
 // Get applications with pagination
-export const getPaginatedApplications = async (
+export const getPaginatedApplications = (
+  data: Application[],
   page: number = 1, 
   pageSize: number = 20
-): Promise<{ results: Application[], total: number }> => {
-  const db = await openDatabase();
-  
+): { results: Application[], total: number } => {
   // Get total count
-  const total = await db.count('applications');
-  
-  // Get all applications (for smaller datasets this is more reliable)
-  const allApplications = await db.getAll('applications');
+  const total = data.length;
   
   // Calculate start and end indices for pagination
   const startIndex = (page - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, allApplications.length);
+  const endIndex = Math.min(startIndex + pageSize, total);
   
   // Get the slice for the current page
-  const results = allApplications.slice(startIndex, endIndex);
+  const results = data.slice(startIndex, endIndex);
   
   return {
     results,
@@ -160,7 +98,9 @@ export const getPaginatedApplications = async (
 };
 
 // Get an application by its APM code
-export const getApplicationByCode = async (code: string): Promise<Application | undefined> => {
-  const db = await openDatabase();
-  return db.get('applications', code);
+export const getApplicationByCode = (
+  data: Application[],
+  code: string
+): Application | undefined => {
+  return data.find(app => app.apm_application_code === code);
 };

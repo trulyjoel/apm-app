@@ -7,7 +7,7 @@ import type { FilterConfirmProps } from "antd/es/table/interface";
 import Highlighter from "react-highlight-words";
 import Link from "next/link";
 import data from "../data.json";
-import { Application, initializeDatabase, getAllApplications, searchApplications, getPaginatedApplications } from "../utils/db";
+import { Application, getAllApplications, searchApplications, getPaginatedApplications } from "../utils/db";
 
 type DataIndex = keyof Application;
 
@@ -26,38 +26,33 @@ export default function TablePage() {
   const searchInput = useRef<any>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Initialize IndexedDB with our data
-        if (data && Array.isArray(data)) {
-          await initializeDatabase(data);
-          console.log("Data loaded successfully into IndexedDB:", data.length, "applications");
-          
-          // Get applications for the first page
-          const { results, total } = await getPaginatedApplications(currentPage, pageSize);
-          console.log("Retrieved paginated results:", results.length, "applications, total:", total);
-          
-          setApplications(results);
-          setFilteredApplications(results);
-          setTotalResults(total);
-          
-          if (results.length === 0 && total > 0) {
-            console.error("Pagination issue: Got 0 results but total is", total);
-          }
-        } else {
-          console.error("Data is not in expected format:", data);
+    try {
+      // Load data directly from JSON
+      if (data && Array.isArray(data)) {
+        console.log("Data loaded successfully:", data.length, "applications");
+        
+        // Get applications for the first page
+        const { results, total } = getPaginatedApplications(data as Application[], currentPage, pageSize);
+        console.log("Retrieved paginated results:", results.length, "applications, total:", total);
+        
+        setApplications(results);
+        setFilteredApplications(results);
+        setTotalResults(total);
+        
+        if (results.length === 0 && total > 0) {
+          console.error("Pagination issue: Got 0 results but total is", total);
         }
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading data from IndexedDB:", error);
-        setLoading(false);
+      } else {
+        console.error("Data is not in expected format:", data);
       }
-    };
-    
-    loadData();
+      setLoading(false);
+    } catch (error) {
+      console.error("Error loading data:", error);
+      setLoading(false);
+    }
   }, [currentPage, pageSize]);
 
-  const handleSearch = async (
+  const handleSearch = (
     selectedKeys: string[],
     confirm: (param?: FilterConfirmProps) => void,
     dataIndex: DataIndex,
@@ -69,14 +64,14 @@ export default function TablePage() {
     setSearching(true);
     
     try {
-      // Use IndexedDB for global search if no specific column is selected
+      // Use direct search if no specific column is selected
       if (searchValue && dataIndex === 'global') {
-        const { results, total } = await searchApplications(searchValue, 1, pageSize);
+        const { results, total } = searchApplications(data as Application[], searchValue, 1, pageSize);
         setFilteredApplications(results);
         setTotalResults(total);
         setCurrentPage(1);
       } else if (!searchValue) {
-        const { results, total } = await getPaginatedApplications(1, pageSize);
+        const { results, total } = getPaginatedApplications(data as Application[], 1, pageSize);
         setFilteredApplications(results);
         setTotalResults(total);
         setCurrentPage(1);
@@ -285,16 +280,16 @@ export default function TablePage() {
             allowClear
             enterButton
             loading={searching}
-            onSearch={async (value) => {
+            onSearch={(value) => {
               setSearching(true);
               try {
                 if (value) {
-                  const { results, total } = await searchApplications(value, 1, pageSize);
+                  const { results, total } = searchApplications(data as Application[], value, 1, pageSize);
                   setFilteredApplications(results);
                   setTotalResults(total);
                   setCurrentPage(1);
                 } else {
-                  const { results, total } = await getPaginatedApplications(1, pageSize);
+                  const { results, total } = getPaginatedApplications(data as Application[], 1, pageSize);
                   setFilteredApplications(results);
                   setTotalResults(total);
                   setCurrentPage(1);
@@ -317,18 +312,18 @@ export default function TablePage() {
             total: totalResults,
             showSizeChanger: true,
             pageSizeOptions: ['10', '20', '50'],
-            onChange: async (page, pageSize) => {
+            onChange: (page, pageSize) => {
               setCurrentPage(page);
               setPageSize(pageSize);
               setLoading(true);
               
               try {
                 if (searchText) {
-                  const { results, total } = await searchApplications(searchText, page, pageSize);
+                  const { results, total } = searchApplications(data as Application[], searchText, page, pageSize);
                   setFilteredApplications(results);
                   setTotalResults(total);
                 } else {
-                  const { results, total } = await getPaginatedApplications(page, pageSize);
+                  const { results, total } = getPaginatedApplications(data as Application[], page, pageSize);
                   setFilteredApplications(results);
                   setTotalResults(total);
                 }
