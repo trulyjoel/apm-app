@@ -5,7 +5,7 @@ import { MailOutlined, TableOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import data from "./data.json";
-import { Application, initializeDatabase, searchApplications } from "./utils/db";
+import { Application, initializeDatabase, searchApplications, getAllApplications } from "./utils/db";
 
 const { Search } = Input;
 const { Text, Title, Paragraph } = Typography;
@@ -63,10 +63,13 @@ export default function Home() {
       // Use IndexedDB to search with pagination
       const { results, total } = await searchApplications(value, page, pageSize);
       
-      setSearchResults(results);
+      console.log("Search query:", value);
+      console.log("Raw search results:", results);
+      console.log("Search results count:", results ? results.length : 0, "applications found, total:", total);
+      
+      setSearchResults(results || []);
       setTotalResults(total);
       setCurrentPage(page);
-      console.log("Search results:", results.length, "applications found, total:", total);
       setIsSearching(false);
     } catch (error) {
       console.error("Error during search:", error);

@@ -60,12 +60,18 @@ export const initializeDatabase = async (data: Application[]): Promise<void> => 
   await tx.objectStore('applications').clear();
   
   // Add all applications
+  let addedCount = 0;
   for (const app of data) {
     await tx.objectStore('applications').add(app);
+    addedCount++;
   }
   
   await tx.done;
-  console.log('Database initialized with', data.length, 'applications');
+  console.log('Database initialized with', addedCount, 'applications out of', data.length);
+  
+  // Verify data was added
+  const count = await db.count('applications');
+  console.log('Actual count in database:', count);
 };
 
 // Get all applications (with optional pagination)
@@ -115,8 +121,6 @@ export const searchApplications = async (
   // Extract just the items from the Fuse results
   const allMatches = fuseResults.map(result => result.item);
     
-  // Calculate total and paginate results
-  
   // Calculate total and paginate results
   const total = allMatches.length;
   const startIndex = (page - 1) * pageSize;
